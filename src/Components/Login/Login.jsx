@@ -1,9 +1,57 @@
-import React, { useState } from 'react';
+import { GoogleAuthProvider, getAuth, sendPasswordResetEmail, signInWithEmailAndPassword } from 'firebase/auth';
+import React, { useRef, useState } from 'react';
 import { FaEye } from 'react-icons/fa';
 import { FaEyeSlash } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
+import app from '../../../public/Firebase/firebase.init';
+import { toast } from 'react-toastify';
+const auth=getAuth(app)
 const Login = () => {
+  const [error, setError] = useState('')
   const [passwordShow, setpasswordShow] = useState(false)
+  const emailRef=useRef()
+
+  const handleLoginSubit = (e) => {
+    e.preventDefault()
+    setError('')
+    const email=e.target.email.value
+    const password = e.target.password.value
+    // console.log(email, password);
+    signInWithEmailAndPassword(auth, email, password)
+    .then(result => {
+      // console.log(result.user);
+      if (!result.user.emailVerified) {
+        toast.error('Log In This Site First Varified Your Email !')
+        return
+      } else if (result.user.emailVerified) {
+        toast.success('You Are Log In This Site !!!')
+      }
+          }).catch(error => {
+            console.log(`Error:`, error.message);
+            setError('Invalid Email Or Password Please Try Again !!!')
+          })
+
+    e.target.reset()
+  }
+
+  const handleForgetPassword = () => {
+    const email = emailRef.current.value
+    if (!email) {
+      toast.error('You Are Provided A Valid Email For Reset The Password !')
+      return
+    }
+    sendPasswordResetEmail(auth, email)
+    .then(result => {
+      // console.log(result);
+      toast.success('Chack Your Email And Reset The Password !')
+          }).catch(error => {
+            console.log(`Error:`, error.message);
+            setError(error.message)
+          })
+  }
+
+
+
 
   const handleTogglePassword = () => {
     setpasswordShow(!passwordShow)
@@ -40,16 +88,16 @@ const Login = () => {
           <p className="px-3 text-gray-600">OR</p>
           <hr className="w-full text-gray-600" />
         </div>
-        <form className="space-y-8 ng-untouched ng-pristine ng-valid">
+        <form className="space-y-8 ng-untouched ng-pristine ng-valid" onSubmit={handleLoginSubit}>
           <div className="space-y-4">
             <div className="space-y-2">
               <label className="block text-md font-semibold text-gray-700">Email address</label>
-              <input type="email" name="email" id="email" placeholder="leroy@jenkins.com" className="w-full px-3 py-2 border rounded-md border-gray-300 bg-gray-50 text-gray-800 focus:border-orange-600" />
+              <input type="email" ref={emailRef} name="email" id="email" placeholder="leroy@jenkins.com" className="w-full px-3 py-2 border rounded-md border-gray-300 bg-gray-50 text-gray-800 focus:border-orange-600" />
             </div>
             <div className="space-y-2 relative">
               <div className="flex justify-between">
                 <label className="text-md font-semibold text-gray-700">Password</label>
-                <a href="#" className=" focus:underline hover:underline text-blue-500 ml-2 text-sm font-semibold">Forgot password?</a>
+                <span className="cursor-pointer focus:underline hover:underline text-blue-500 ml-2 text-sm font-semibold" onClick={handleForgetPassword}>Forgot password?</span>
               </div>
               <input type={passwordShow ? 'text' : 'password'} name="password" id="password" placeholder="*****" className="w-full px-3 py-2 border rounded-md border-gray-300 bg-gray-50 text-gray-800 focus:border-orange-600" />
               <button
@@ -59,9 +107,10 @@ const Login = () => {
               >
                 {passwordShow ?<FaEyeSlash/>:<FaEye/>}
               </button>
+              <p className='text-red-500 font-semibold text-md'>{error}</p>
             </div>
           </div>
-          <button type="button" className="w-full px-8 py-3 font-semibold rounded-md hover:bg-orange-500 bg-orange-600 text-gray-50">Sign in</button>
+          <button type="submit" className="w-full px-8 py-3 font-semibold rounded-md hover:bg-orange-500 bg-orange-600 text-gray-50">Sign in</button>
         </form>
       </div>
     </>
